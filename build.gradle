@@ -1,0 +1,22 @@
+apply plugin: 'java-library'
+apply plugin: 'distribution'
+
+def source = 'build/libs/' + project.name + '.jar'
+def dist = '' + project.rootDir + '/../../dist'
+def lib = '' + project.rootDir + '/../../lib'
+
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    implementation files(lib + '/UC4_12.1/uc4.jar')
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.4'
+
+}
+
+task copy(type: Copy) {
+	from source
+	into dist
+}
