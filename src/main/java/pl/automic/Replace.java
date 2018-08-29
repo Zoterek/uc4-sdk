@@ -160,8 +160,6 @@ public class Replace {
 	
 	public State userAuthorization(UC4Object obj) {
 		String type = obj.getType();
-		// TODO Temp patch for single lines
-		this.pattern = Pattern.compile(this.filter.replace.pattern);
 		
 		if(type.equals("USER")) {
 			User user = (User) obj;
