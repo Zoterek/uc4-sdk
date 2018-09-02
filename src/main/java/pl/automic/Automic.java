@@ -8,18 +8,30 @@ import com.uc4.communication.Connection;
 import com.uc4.communication.requests.CreateSession;
 import com.uc4.communication.requests.XMLRequest;
 
+import pl.automic.config.ConnectionConfig;
+import pl.automic.config.UC4Config;
+
 public class Automic {
 	private Connection uc4;
-	private Config config;
 	
-	public Automic(String arg0) throws IOException {
-		config = new ObjectMapper().readValue(arg0, Config.class);
-		connect();
+	public Automic(String jsonString) throws IOException {
+		UC4Config config = new ObjectMapper().readValue(jsonString, UC4Config.class);
+		connect(config.getConnectionConfig());
 	}
 	
-	public Automic(File arg0) throws IOException {
-		config = new ObjectMapper().readValue(arg0, Config.class);
-		connect();
+	public Automic(File file) throws IOException {
+		UC4Config config = new ObjectMapper().readValue(file, UC4Config.class);
+		connect(config.getConnectionConfig());
+	}
+	
+	/*
+	 * Version 0.0.2
+	 * 
+	 * Proposal:
+	 * Might need to create a private UC4Config object for the whole class
+	 */
+	public Automic(UC4Config config) throws IOException {
+		connect(config.getConnectionConfig());
 	}
 	
 	public void send(XMLRequest req) throws IOException {
@@ -31,9 +43,9 @@ public class Automic {
 		uc4.close();
 	}
 	
-	private void connect() throws IOException {
-		uc4 = Connection.open(config.host, config.port);
-		CreateSession login = uc4.login(config.client, config.user, config.department, config.password, 'E');
+	private void connect(ConnectionConfig cc) throws IOException {
+		uc4 = Connection.open(cc.host, cc.port);
+		CreateSession login = uc4.login(cc.client, cc.user, cc.department, cc.password, 'E');
 		if (!login.isLoginSuccessful()) throw new IllegalArgumentException(login.getMessageBox().getText());
 	}
 }

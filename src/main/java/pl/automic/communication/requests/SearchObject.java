@@ -6,17 +6,17 @@ import java.io.IOException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uc4.api.DateTime;
 
-import pl.automic.communication.requests.json.Filter;
+import pl.automic.config.SearchFilterConfig;
 
 public class SearchObject extends com.uc4.communication.requests.SearchObject {
-	private Filter filter;
+	private SearchFilterConfig filter;
 	
 	public SearchObject() {
 		super();
 	}
 
 	public SearchObject(File filter) throws IOException {
-		this.filter = new ObjectMapper().readValue(filter, Filter.class);
+		this.filter = new ObjectMapper().readValue(filter, SearchFilterConfig.class);
 		
 		
 		setDate();

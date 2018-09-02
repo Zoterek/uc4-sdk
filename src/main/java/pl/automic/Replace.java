@@ -17,21 +17,21 @@ import com.uc4.api.objects.UserRight;
 import com.uc4.api.objects.WorkflowIF;
 import com.uc4.api.objects.WorkflowLoop;
 
-import pl.automic.communication.requests.json.Filter;
+import pl.automic.config.SearchFilterConfig;
 
 /*
  * Custom class to replace given data using regex 
  */
 
 public class Replace {
-	private Filter filter;
+	private SearchFilterConfig filter;
 	private Pattern pattern;
 	private String replacement;
 	// TODO Temp patch for replaceUserRight
 	private State state;
 	
 	public Replace(File filter) throws IOException {
-		this.filter = new ObjectMapper().readValue(filter, Filter.class);
+		this.filter = new ObjectMapper().readValue(filter, SearchFilterConfig.class);
 		this.pattern = Pattern.compile(this.filter.replace.pattern);
 		this.replacement = this.filter.replace.replacement;
 	}
