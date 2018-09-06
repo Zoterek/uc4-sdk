@@ -1,12 +1,12 @@
 package pl.automic.communication.requests;
 
-import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uc4.api.DateTime;
-
 import pl.automic.config.SearchFilterConfig;
+import pl.automic.config.TextSearchConfig;
 
 public class SearchObject extends com.uc4.communication.requests.SearchObject {
 	private SearchFilterConfig filter;
@@ -15,14 +15,17 @@ public class SearchObject extends com.uc4.communication.requests.SearchObject {
 		super();
 	}
 
-	public SearchObject(File filter) throws IOException {
-		this.filter = new ObjectMapper().readValue(filter, SearchFilterConfig.class);
-		
+	public SearchObject(SearchFilterConfig filter) throws IOException {
+		if(filter == null) {
+			return;
+		}
+		this.filter = filter;
 		
 		setDate();
 		setName();
 		setSearchForUse();
 		setTextSearch();
+		setType();
 	}
 	
 	private void setDate() {
@@ -62,10 +65,50 @@ public class SearchObject extends com.uc4.communication.requests.SearchObject {
 	}
 	
 	private void setTextSearch() {
-		if(filter.textSearch == null || filter.textSearch.text == null || filter.textSearch.text.isEmpty()) {
+		if(filter.textSearch == null) {
 			return;
 		}
 		
-		this.setTextSearch(filter.textSearch.text, filter.textSearch.process, false, false, false);
+		TextSearchConfig config = filter.textSearch;
+		if(config.hasTextSearch()) {
+			this.setTextSearch(config.getText(), config.getProcess(), config.getDocumentation(), config.getObjectTitle(), config.getArchiveKey());
+		}
 	}
+	
+	private void setType() {
+		if(filter.type.length == 0) {
+			this.selectAllObjectTypes();
+		} else {
+			for(String type : filter.type) {
+				setType(type);
+			}
+		}
+	}
+	
+	private void setType(String type) {
+		Method method = null;
+		try {
+			method = this.getClass().getMethod("setType" + type, boolean.class);
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
+			System.exit(0);
+		} catch (SecurityException e) {
+			e.printStackTrace();
+			System.exit(0);
+		}
+		
+		try {
+			method.invoke(this, true);
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+			System.exit(0);
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+			System.exit(0);
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+	
 }
