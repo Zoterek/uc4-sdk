@@ -10,7 +10,9 @@ public class SearchFilterConfig {
 	public String from;
 	public String name;
 	public String to;
+	public String[] type;
 	
 	public TextSearchConfig textSearch;
+	// TODO
 	public ReplacementConfig replace;
 }

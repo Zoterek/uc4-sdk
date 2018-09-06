@@ -4,5 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class OptionsConfig {
-	boolean verbose;
+	public String inputFileName;
+	public boolean verbose;
+	
+
 }
