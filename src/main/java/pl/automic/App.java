@@ -7,24 +7,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import pl.automic.config.OptionsConfig;
 import pl.automic.config.UC4Config;
-import pl.automic.config.input.Input;
 
 public class App {
-	private OptionsConfig options;
-	
 	protected Automic automic;
-	protected Input input;
 	protected UC4Config config;
+	protected OptionsConfig options;
+	protected String configRoot;
 	
 	public App(String[] args) throws IOException {
-		File configFile = new File(readArg(0, args, "uc4.config.json"));
+		File configFile = new File(readArg(0, args, "../config/uc4.config.json"));
 		this.config = new ObjectMapper().readValue(configFile, UC4Config.class);
+		this.configRoot = configFile.getParent().replaceAll("\\\\", "/") + "/";
 		this.options = config.getOptionsConfig();
-		
-		if(options.inputFileName != null) {
-			File inputFile = new File(readArg(1, args, options.inputFileName));
-			this.input = new ObjectMapper().readValue(inputFile, Input.class);
-		}
 		
 		try {
 			this.automic = new Automic(config.getConnectionConfig());

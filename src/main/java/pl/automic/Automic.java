@@ -67,6 +67,7 @@ public class Automic {
 	
 	public void exit() throws IOException {
 		uc4.close();
+		System.exit(0);
 	}
 	
 	private void connect(ConnectionConfig cc) throws IOException {
