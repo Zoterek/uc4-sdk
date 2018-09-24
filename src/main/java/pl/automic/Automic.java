@@ -6,6 +6,7 @@ import java.io.IOException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uc4.api.objects.UC4Object;
 import com.uc4.communication.Connection;
+import com.uc4.communication.SSOConfiguration;
 import com.uc4.communication.requests.CloseObject;
 import com.uc4.communication.requests.CreateSession;
 import com.uc4.communication.requests.SaveObject;
@@ -72,7 +73,12 @@ public class Automic {
 	
 	private void connect(ConnectionConfig cc) throws IOException {
 		uc4 = Connection.open(cc.host, cc.port);
-		CreateSession login = uc4.login(cc.client, cc.user, cc.department, cc.password, 'E');
+		CreateSession login;
+		if(cc.ldap) {
+			login = uc4.login(new SSOConfiguration(cc.client));
+		} else {
+			login = uc4.login(cc.client, cc.user, cc.department, cc.password, 'E');
+		}
 		if (!login.isLoginSuccessful()) throw new IllegalArgumentException(login.getMessageBox().getText());
 	}
 }

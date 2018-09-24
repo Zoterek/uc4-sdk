@@ -10,5 +10,6 @@ public class ConnectionConfig {
 	public String user;
 	public String department;
 	public String password;
+	public boolean ldap;
 	
 }
