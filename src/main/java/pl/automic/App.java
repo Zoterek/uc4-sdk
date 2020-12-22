@@ -37,6 +37,14 @@ public class App {
 		}
 	}
 	
+	protected void exit(int code) {
+		try {
+			this.automic.exit(code);
+		} catch (IOException e) {
+			
+		}
+	}
+	
 	protected String readArg(int pos, String[] args, String defaultValue) {
 		return args.length > pos ? args[pos] : defaultValue;
 	}

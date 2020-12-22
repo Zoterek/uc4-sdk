@@ -37,7 +37,7 @@ public class Automic {
 	
 	public void send(XMLRequest req) throws IOException {
 		uc4.sendRequestAndWait(req);
-		if (req.getMessageBox() != null) throw new RuntimeException(req.getMessageBox().getText());	
+		if (req.getMessageBox() != null) throw new RuntimeException(req.getMessageBox().getText());
 	}
 	
 	public SaveObject save(UC4Object obj) {
@@ -69,6 +69,11 @@ public class Automic {
 	public void exit() throws IOException {
 		uc4.close();
 		System.exit(0);
+	}
+	
+	public void exit(int code) throws IOException {
+		uc4.close();
+		System.exit(code);
 	}
 	
 	private void connect(ConnectionConfig cc) throws IOException {

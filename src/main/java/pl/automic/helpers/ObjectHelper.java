@@ -13,4 +13,40 @@ public class ObjectHelper {
 		
 		return new UC4ObjectName(name);
 	}
+	
+	public static boolean stringToBoolean(String str) {
+		if(str == null) {
+			return false;
+		}
+		
+		str = str.toUpperCase();
+		switch (str) {
+		case "Y":
+		case "YES":
+		case "TRUE":
+			return true;
+		default:
+			return false;
+		}
+	}
+	
+	public static boolean stringToBoolean(String str, boolean def) {
+		if(str == null) {
+			return def;
+		}
+		
+		str = str.toUpperCase();
+		switch (str) {
+		case "Y":
+		case "YES":
+		case "TRUE":
+			return true;
+		case "N":
+		case "NO":
+		case "FALSE":
+			return false;
+		default:
+			return def;
+		}
+	}
 }

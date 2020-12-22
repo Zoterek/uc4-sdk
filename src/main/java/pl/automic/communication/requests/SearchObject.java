@@ -76,7 +76,7 @@ public class SearchObject extends com.uc4.communication.requests.SearchObject {
 	}
 	
 	private void setType() {
-		if(filter.type.length == 0) {
+		if(filter.type == null || filter.type.length == 0) {
 			this.selectAllObjectTypes();
 		} else {
 			for(String type : filter.type) {
@@ -90,6 +90,7 @@ public class SearchObject extends com.uc4.communication.requests.SearchObject {
 		try {
 			method = this.getClass().getMethod("setType" + type, boolean.class);
 		} catch (NoSuchMethodException e) {
+			System.err.println("The object type does not exist: " + type);
 			e.printStackTrace();
 			System.exit(0);
 		} catch (SecurityException e) {

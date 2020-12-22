@@ -39,9 +39,8 @@ public class Replace {
 	
 	public State process(UC4Object obj) {
 		String name = obj.getName();
-		String type = obj.getType();
 		
-		if(type.equals("JOBF")) {
+		if(obj instanceof FileTransfer) {
 			FileTransfer job = (FileTransfer) obj;
 			
 			// Replace process
@@ -58,7 +57,7 @@ public class Replace {
 			} else {
 				return State.CHANGED;
 			}
-		} else if(type.equals("JOBI")) {
+		} else if(obj instanceof Include) {
 			Include job = (Include) obj;
 			
 			// Replace process
@@ -71,7 +70,7 @@ public class Replace {
 				return State.CHANGED;
 			}
 			
-		} else if(type.startsWith("JOBS")) {
+		} else if(obj instanceof Job) {
 			Job job = (Job) obj;
 			
 			// Replace pre process
@@ -94,7 +93,7 @@ public class Replace {
 			} else {
 				return State.CHANGED;
 			}
-		} else if(type.equals("JOBP")) {
+		} else if(obj instanceof JobPlan) {
 			try {
 				JobPlan jp = (JobPlan) obj;
 				
@@ -140,7 +139,7 @@ public class Replace {
 			} catch (ClassCastException e) { }
 			
 			return State.ERROR;
-		} else if(type.equals("SCRI")) {
+		} else if(obj instanceof Script) {
 			Script scri = (Script) obj;
 			
 			// Replace process
@@ -153,20 +152,19 @@ public class Replace {
 				return State.CHANGED;
 			}
 		} else {
-			out("Skipped", name, "of type", type);
+			out("Skipped", name, "of type", obj.getType());
 			return State.SKIPPED;
 		}
 	}
 	
 	public State userAuthorization(UC4Object obj) {
-		String type = obj.getType();
 		
-		if(type.equals("USER")) {
+		if(obj instanceof User) {
 			User user = (User) obj;
 			
 			// replace authorizations
 			user.authorizations().iterator().forEachRemaining(e -> this.state = replaceUserRight(e));
-		} else if(type.equals("USRG")) {
+		} else if(obj instanceof UserGroup) {
 			UserGroup userg = (UserGroup) obj;
 			
 			// replace authorizations
@@ -178,6 +176,7 @@ public class Replace {
 	}
 			
 	private String replace(String str) {
+		// TODO pattern.
 		return pattern.matcher(str).replaceAll(this.replacement);
 	}
 	

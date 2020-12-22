@@ -3,6 +3,7 @@ package pl.automic.communication.requests;
 import java.io.IOException;
 
 import com.uc4.api.Template;
+import com.uc4.api.UC4Alias;
 import com.uc4.api.UC4HostName;
 import com.uc4.api.UC4ObjectName;
 import com.uc4.api.objects.AttributesSAP;
@@ -10,12 +11,17 @@ import com.uc4.api.objects.FileTransfer;
 import com.uc4.api.objects.FileTransferSettings;
 import com.uc4.api.objects.IFolder;
 import com.uc4.api.objects.Job;
+import com.uc4.api.objects.JobPlan;
+import com.uc4.api.objects.JobPlanTask;
+import com.uc4.api.objects.Variable;
 
 import pl.automic.Automic;
+import pl.automic.communication.requests.exceptions.UnsupportedTypeException;
 import pl.automic.helpers.ObjectAttributes;
 import pl.automic.helpers.ObjectHelper;
 
 public class CreateObject extends com.uc4.communication.requests.CreateObject {
+	Automic automic;
 	
 	public CreateObject(String name, Template template, IFolder folder) {
 		this(ObjectHelper.getUC4Name(name, template.getTemplateName()), template, folder);
@@ -25,34 +31,45 @@ public class CreateObject extends com.uc4.communication.requests.CreateObject {
 		super(arg0, arg1, arg2);
 	}
 	
-	public CreateObject(ObjectAttributes att, IFolder folder, Automic automic) throws IOException {
+	public CreateObject(ObjectAttributes att, IFolder folder, Automic automic) throws IOException, UnsupportedTypeException {
 		this(att.name, Template.getTemplateFor(att.template), folder);
+		this.automic = automic;
 		automic.send(this);
+
+		@SuppressWarnings("unused")
+		AlterObject alterObject = new AlterObject(att, automic);
 		
-		OpenObject open = new OpenObject(att.name);
-		automic.send(open);
-		
-		if(Template.getTemplateFor(att.template).getType().equals("JOBS")) {
-			Job job = createJob(att, (Job) open.getUC4Object());
-			automic.save(job);
-			automic.close(job);
-		} else if(Template.getTemplateFor(att.template).getType().equals("JOBF")) {
-			FileTransfer fileTransfer = createFileTransfer(att, (FileTransfer) open.getUC4Object());
-			automic.save(fileTransfer);
-			automic.close(fileTransfer);
-		}
+//		Moved to AlterObject
+//		
+//		OpenObject open = new OpenObject(att.name);
+//		automic.send(open);
+//		
+//		if(Template.getTemplateFor(att.template).getType().equals("JOBS")) {
+//			Job job = alterJob(att, (Job) open.getUC4Object());
+//			automic.save(job);
+//			automic.close(job);
+//		} else if(Template.getTemplateFor(att.template).getType().equals("JOBF")) {
+//			FileTransfer fileTransfer = alterFileTransfer(att, (FileTransfer) open.getUC4Object());
+//			automic.save(fileTransfer);
+//			automic.close(fileTransfer);
+//		} else if(Template.getTemplateFor(att.template).getType().equals("JOBP")) {
+//			JobPlan jobPlan = alterJobPlan(att, (JobPlan) open.getUC4Object());
+//			automic.save(jobPlan);
+//			automic.close(jobPlan);
+//		} else if(Template.getTemplateFor(att.template).getType().equals("VARA")) {
+//			Variable variable = alterVariable(att, (Variable) open.getUC4Object());
+//			automic.save(variable);
+//			automic.close(variable);
+//		}
 		
 	}
 	
-	private Job createJob(ObjectAttributes att, Job job) {
+	private Job alterJob(ObjectAttributes att, Job job) {
 		if(att.archive1 != null) {
 			job.header().setArchiveKey1(att.archive1);
 		}
 		if(att.archive2 != null) {
 			job.header().setArchiveKey2(att.archive2);
-		}
-		if(att.description != null) {
-			// TODO
 		}
 		if(att.host != null) {
 			job.attributes().setHost(new UC4HostName(att.host));
@@ -88,19 +105,125 @@ public class CreateObject extends com.uc4.communication.requests.CreateObject {
 				job.values().addValue(k, v, true);
 			});
 		}
+		if(job.hostAttributes() instanceof AttributesSAP) {
+			AttributesSAP sap = (AttributesSAP) job.hostAttributes();
+			
+			if(att.sap != null) {
+				sap.setDeleteJob(att.sap.delete);
+				
+			}
+		}
 		
 		return job;
 	}
 	
-	private FileTransfer createFileTransfer(ObjectAttributes att, FileTransfer obj) {
+	private JobPlan alterJobPlan(ObjectAttributes att, JobPlan obj) {
 		if(att.archive1 != null) {
 			obj.header().setArchiveKey1(att.archive1);
 		}
 		if(att.archive2 != null) {
 			obj.header().setArchiveKey2(att.archive2);
 		}
-		if(att.description != null) {
-			// TODO
+		if(att.process != null) {
+			obj.setProcess(att.process);
+		}
+		if(att.title != null) {
+			obj.header().setTitle(att.title);
+		}
+		if(att.variable != null) {
+			att.variable.map.forEach((k, v) -> {
+				obj.values().addValue(k, v, true);
+			});
+		}
+		// Jobplan specific attributes
+		if(att.jobPlan.tasks != null) {
+			att.jobPlan.tasks.forEach(task -> {
+				JobPlanTask jpt;
+				
+				if(task.name.equals("START")) {
+					jpt = obj.getStartTask();
+				} else if(task.name.equals("END")) {
+					jpt = obj.getEndTask();
+				} else {
+					AddJobPlanTask ajpt;
+					if(task.alias != null) {
+						ajpt = new AddJobPlanTask(new UC4ObjectName(task.name), new UC4Alias(task.alias));
+					} else {
+						ajpt = new AddJobPlanTask(new UC4ObjectName(task.name));
+					}
+						
+					
+					try {
+						automic.send(ajpt);
+					} catch (IOException e) {
+						System.err.println("Error while creating task: " + task.name);
+						e.printStackTrace();
+					}
+					
+					jpt = ajpt.getJobPlanTask();
+					jpt.setUserDefinedID(task.id);
+					obj.addTask(jpt);
+				}
+				
+				// Add dependencies
+				for(int id : task.predecessor) {
+					if(id == 0 && task.dependencyStatus != null) {
+						jpt.dependencies().addDependency(obj.getStartTask(), task.dependencyStatus);
+					} else if(id == 0) {
+						jpt.dependencies().addDependency(obj.getStartTask());
+					} else if(task.dependencyStatus != null) {
+						jpt.dependencies().addDependency(obj.getTaskByUserDefinedID(String.valueOf(id)), task.dependencyStatus);
+					} else {
+						jpt.dependencies().addDependency(obj.getTaskByUserDefinedID(String.valueOf(id)));
+					}
+					
+				}
+
+				// Set else
+				if(task.onFailure != null) {
+					jpt = setElse(jpt, task.onFailure);
+				}
+				
+				if(task.hasEarliest()) {
+					jpt.earliest().setEarliestStart(true);
+					jpt.earliest().setTime(task.time);
+					jpt.earliest().setDaysAfterJobPlanActivation(task.daysAfterJobPlanActivation);
+				}
+				
+				if(task.hasCalendarCondiiton()) {
+					jpt.calendar().addCalendarCondition(task.getCalendarCondition());
+				}
+				
+				
+				obj.format();
+				
+			});
+		}
+		
+		return obj;
+	}
+	
+	public JobPlanTask setElse(JobPlanTask jpt, String onFailure) {
+		switch (onFailure) {
+		case "SKIP":
+			jpt.dependencies().setElseSkip();
+			break;
+		case "BLOCK":
+			jpt.dependencies().setElseBlock();
+			break;
+		case "ABORT":
+			jpt.dependencies().setElseAbort();
+			break;
+		}
+		return jpt;
+	}
+	
+	private FileTransfer alterFileTransfer(ObjectAttributes att, FileTransfer obj) {
+		if(att.archive1 != null) {
+			obj.header().setArchiveKey1(att.archive1);
+		}
+		if(att.archive2 != null) {
+			obj.header().setArchiveKey2(att.archive2);
 		}
 		if(att.host != null) {
 			obj.settings().setSourceHost(new UC4HostName(att.host));
@@ -157,6 +280,17 @@ public class CreateObject extends com.uc4.communication.requests.CreateObject {
 				obj.values().addValue(k, v, true);
 			});
 		}
+		
+		return obj;
+	}
+	
+	private Variable alterVariable(ObjectAttributes att, Variable obj) {
+		if(att.variable != null) {
+			att.variable.map.forEach((k, v) -> {
+				obj.add(k, v);
+			});
+		}
+		
 		
 		return obj;
 	}
