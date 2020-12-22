@@ -2,8 +2,8 @@ apply plugin: 'java-library'
 apply plugin: 'distribution'
 
 def source = 'build/libs/' + project.name + '.jar'
-def dist = '' + project.rootDir + '/../../dist'
-def lib = '' + project.rootDir + '/../../lib'
+def dist = '' + project.rootDir + '/../../.dist'
+def lib = '' + project.rootDir + 'D:/eclipse-workspace/.lib/uc4-lib'
 
 
 version = '1.0.0'
@@ -14,7 +14,7 @@ repositories {
 }
 
 dependencies {
-    implementation files(lib + '/UC4_12.1/uc4.jar')
+    implementation files(lib + '/uc4-12.1.jar')
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.4'
 
 }
